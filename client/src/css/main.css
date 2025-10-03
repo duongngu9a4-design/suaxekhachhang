@@ -1,0 +1,43 @@
+:root{
+    --color-primary: #27F580;
+    --color-danger: #27DAF5;
+    --color-black: #000;
+    --color-white: #fff;
+    --color-grey: #5c5c5e;
+    --color-grey-light: #dcdcdc;
+}
+
+.btn-primary{
+    background-color: var(--color-primary);
+    opacity: 0.9;
+}
+
+.btn-danger{
+    background-color: var(--color-danger);
+    color: var(--color-white);
+}
+
+.btn-cancel{
+    background-color: var(--color-danger);
+    color: var(--color-white);
+}
+
+.rounded-sm{
+    border-radius: 4px;
+}
+
+.rounded-md{
+    border-radius: 8px;
+}
+
+.shadow-md{
+    box-shadow: rgba(0,0,0,0.15) 0 2px 8px;
+}
+
+.logo img{
+    max-width: 200px;
+}
+
+.page-wrarper{
+    min-height: 100vh;
+}

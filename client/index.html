@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trang Chủ - Sửa Xe Khách Hàng</title>
+
+  <link rel="shortcut icon" href="./src/img/logo.png" type="image/x-icon">
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- CSS chính -->
+  <link rel="stylesheet" href="./src/css/main.css">
+</head>
+<body class="bg-light">
+
+  <!-- Nếu chưa đăng nhập thì tự động chuyển về login.html -->
+  <script type="module">
+    import { auth } from "./src/js/firebase-config.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        document.getElementById("user-info").innerHTML =
+          `<i class="fa-solid fa-user"></i> ${user.email}`;
+      }
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "login.html";
+    });
+  </script>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        <i class="fa-solid fa-screwdriver-wrench"></i> Sửa Xe Khách Hàng
+      </a>
+      <div class="d-flex">
+        <span class="text-white me-3" id="user-info"><i class="fa-solid fa-user"></i> Khách</span>
+        <button class="btn btn-outline-light btn-sm" id="logout-btn">Đăng xuất</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#car">Thông tin xe</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#maintenance">Lịch sử bảo dưỡng</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#expense">Chi phí bảo dưỡng</button></li>
+    </ul>
+
+    <div class="tab-content mt-3">
+      <!-- Xe -->
+      <div class="tab-pane fade show active" id="car">
+        <h5>Thêm thông tin xe</h5>
+        <form id="add-car-form" class="row g-3 mb-3">
+          <div class="col-md-3"><input id="car-plate" type="text" class="form-control" placeholder="Biển số" required></div>
+          <div class="col-md-3"><input id="car-brand" type="text" class="form-control" placeholder="Hãng" required></div>
+          <div class="col-md-3"><input id="car-model" type="text" class="form-control" placeholder="Model" required></div>
+          <div class="col-md-3"><input id="car-year" type="number" class="form-control" placeholder="Năm sản xuất" required></div>
+          <div class="col-12"><button class="btn btn-primary">Thêm xe</button></div>
+        </form>
+        <h5>Danh sách xe</h5>
+        <table class="table table-striped">
+          <thead><tr><th>Biển số</th><th>Hãng</th><th>Model</th><th>Năm</th><th>Hành động</th></tr></thead>
+          <tbody id="car-list"></tbody>
+        </table>
+      </div>
+
+      <!-- Bảo dưỡng -->
+      <div class="tab-pane fade" id="maintenance">
+        <h5>Ghi lịch sử bảo dưỡng</h5>
+        <form id="maintenance-form" class="row g-3 mb-3">
+          <div class="col-md-3"><input id="maint-plate" type="text" class="form-control" placeholder="Biển số" required></div>
+          <div class="col-md-5"><input id="maint-content" type="text" class="form-control" placeholder="Nội dung bảo dưỡng" required></div>
+          <div class="col-md-4"><input id="maint-date" type="date" class="form-control" required></div>
+          <div class="col-12"><button class="btn btn-success">Lưu lịch sử</button></div>
+        </form>
+        <h5>Lịch sử bảo dưỡng</h5>
+        <table class="table table-bordered">
+          <thead><tr><th>Biển số</th><th>Nội dung</th><th>Ngày</th></tr></thead>
+          <tbody id="maintenance-history"></tbody>
+        </table>
+      </div>
+
+      <!-- Chi phí -->
+      <div class="tab-pane fade" id="expense">
+        <h5>Ghi chi phí bảo dưỡng</h5>
+        <form id="expense-form" class="row g-3 mb-3">
+          <div class="col-md-4"><input id="exp-plate" type="text" class="form-control" placeholder="Biển số" required></div>
+          <div class="col-md-4"><input id="exp-amount" type="number" class="form-control" placeholder="Số tiền (VNĐ)" required></div>
+          <div class="col-md-4"><input id="exp-date" type="date" class="form-control" required></div>
+          <div class="col-12"><button class="btn btn-warning">Lưu chi phí</button></div>
+        </form>
+        <h5>Thống kê chi phí</h5>
+        <canvas id="expenseChart" height="100"></canvas>
+        <table class="table mt-3">
+          <thead><tr><th>Biển số</th><th>Số tiền</th><th>Ngày</th></tr></thead>
+          <tbody id="expense-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- CRUD Logic -->
+  <script type="module">
+    import { db } from "./src/js/firebase-config.js";
+    import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+    // ====== Car ======
+    const carForm = document.getElementById("add-car-form");
+    const carList = document.getElementById("car-list");
+    const carCollection = collection(db, "cars");
+
+    carForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await addDoc(carCollection, {
+        plate: document.getElementById("car-plate").value,
+        brand: document.getElementById("car-brand").value,
+        model: document.getElementById("car-model").value,
+        year: document.getElementById("car-year").value,
+      });
+      carForm.reset(); loadCars();
+    });
+    async function loadCars() {
+      carList.innerHTML = "";
+      const snapshot = await getDocs(carCollection);
+      snapshot.forEach((d) => {
+        const c = d.data();
+        carList.innerHTML += `<tr>
+          <td>${c.plate}</td><td>${c.brand}</td><td>${c.model}</td><td>${c.year}</td>
+          <td><button class="btn btn-sm btn-danger" onclick="deleteCar('${d.id}')">Xóa</button></td></tr>`;
+      });
+    }
+    window.deleteCar = async (id) => { await deleteDoc(doc(db, "cars", id)); loadCars(); };
+    loadCars();
+
+    // ====== Maintenance ======
+    const maintForm = document.getElementById("maintenance-form");
+    const maintList = document.getElementById("maintenance-history");
+    const maintCollection = collection(db, "maintenance");
+
+    maintForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await addDoc(maintCollection, {
+        plate: document.getElementById("maint-plate").value,
+        content: document.getElementById("maint-content").value,
+        date: document.getElementById("maint-date").value,
+      });
+      maintForm.reset(); loadMaint();
+    });
+    async function loadMaint() {
+      maintList.innerHTML = "";
+      const snapshot = await getDocs(maintCollection);
+      snapshot.forEach((d) => {
+        const m = d.data();
+        maintList.innerHTML += `<tr><td>${m.plate}</td><td>${m.content}</td><td>${m.date}</td></tr>`;
+      });
+    }
+    loadMaint();
+
+    // ====== Expense + Chart ======
+    const expForm = document.getElementById("expense-form");
+    const expList = document.getElementById("expense-list");
+    const expCollection = collection(db, "expenses");
+
+    let chart;
+    expForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await addDoc(expCollection, {
+        plate: document.getElementById("exp-plate").value,
+        amount: +document.getElementById("exp-amount").value,
+        date: document.getElementById("exp-date").value,
+      });
+      expForm.reset(); loadExpense();
+    });
+
+    async function loadExpense() {
+      expList.innerHTML = "";
+      const snapshot = await getDocs(expCollection);
+      let labels = [], data = [];
+      snapshot.forEach((d) => {
+        const e = d.data();
+        expList.innerHTML += `<tr><td>${e.plate}</td><td>${e.amount}</td><td>${e.date}</td></tr>`;
+        labels.push(e.date); data.push(e.amount);
+      });
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById("expenseChart"), {
+        type: "bar",
+        data: { labels, datasets: [{ label: "Chi phí (VNĐ)", data }] },
+      });
+    }
+    loadExpense();
+  </script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký - Sửa Xe Khách Hàng</title>
+
+    <link rel="shortcut icon" href="./src/img/logo.png" type="image/x-icon">
+    
+     <!--Bootstrap 5 cdn -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" 
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+    <!--FontAwsome cdn -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" 
+    integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" 
+    referrerpolicy="no-referrer" />
+
+    <!--main css -->
+    <link rel="stylesheet" href="./src/css/main.css">
+</head>
+<body>
+    
+    <div class="container mt-5">
+         <div class="row justify-content-center auth-container">       
+            <div class="col-md-6 shadow-md p-4 rounded-md">
+               <a href="index.html" class="Logo-container btn-primary">
+                    <i class="fa-solid fa-house-chimney"></i>
+               </a>
+
+               <h5>Đăng Ký</h5>
+                <form id="register-form">
+                    <div class="form-group mb-3">
+                        <div class="input-wrapper"></div>
+                        <span class="icon"><i class="fa-solid fa-user"></i></span>
+                        <input type="username" name="" class="form-control inp-username" id="username"
+                        placeholder="tên người dung">
+                </div>
+                    <div class="form-group mb-3">
+                        <div class="input-wrapper"></div>
+                        <span class="icon"><i class="fa-solid fa-envelope"></i></span>
+                        <input type="email" name="" class="form-control inp-email" id="email"   
+                        placeholder="địa chỉ email">
+                </div>
+                    <div class="form-group mb-3">
+                        <div class="input-wrapper"></div>
+                        <span class="icon"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" name="" class="form-control inp-pwd" id="password"
+                        placeholder="mật khẩu">
+                </div>
+                     <div class="form-group mb-3">
+                        <div class="input-wrapper"></div>
+                        <span class="icon"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" name="" class="form-control inp-cf-pwd" id="confirm-password"
+                        placeholder="nhập lại mật khẩu">
+                </div>
+                <button type="sumbit" class="btn btn-primary btn-auth">Đăng ký</button>
+            </form>
+            <p class="login-link mt-2 text-center">Đã có tài khoản?<a href="login.html">Đăng nhập</a></p>
+            </div>
+         </div>
+   </div>
+   
+   
+   
+    <!--Bootstrap 5 cdn -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" 
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+   <!--register js-->
+    <script type="module" src="./src/js/register.js"></script>
+</body>
+</html>
