@@ -1,146 +1,177 @@
-// src/js/index.js
-import { auth } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import {
+  collection, addDoc, getDocs, deleteDoc, doc, query, where
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-// Kiểm tra trạng thái đăng nhập
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    document.getElementById("user-info").innerText = `👤 ${user.email}`;
-  } else {
-    // Nếu chưa đăng nhập thì quay về trang login
-    window.location.href = "login.html";
-  }
-});
-
-// Xử lý nút đăng xuất
+const userInfo = document.getElementById("user-info");
 const logoutBtn = document.getElementById("logout-btn");
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", async () => {
-    try {
-      await signOut(auth);
-      console.log("Đã đăng xuất thành công");
-      window.location.href = "login.html"; // Quay lại trang login
-    } catch (error) {
-      console.error("Lỗi khi đăng xuất:", error);
-      alert("Đăng xuất thất bại: " + error.message);
-    }
-  });
-}
-// ================= HIỂN THỊ THÔNG TIN NGƯỜI DÙNG =================
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    document.getElementById("user-info").innerHTML = `<i class="fa-solid fa-user"></i> ${user.email}`;
-  }
-});
 
-// ================= THÔNG TIN XE =================
-const carForm = document.getElementById("add-car-form");
+// Forms và lists
+const addCarForm = document.getElementById("add-car-form");
 const carList = document.getElementById("car-list");
 
-carForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const [plate, brand, model, year] = [...carForm.querySelectorAll("input")].map(i => i.value);
+const maintenanceForm = document.getElementById("maintenance-form");
+const maintenanceList = document.getElementById("maintenance-history");
 
-  await addDoc(collection(db, "cars"), {
-    plate, brand, model, year, createdAt: new Date()
-  });
+const expenseForm = document.getElementById("expense-form");
+const expenseChart = document.getElementById("expenseChart");
+let chart = null;
 
-  carForm.reset();
-  loadCars();
+// =================== LOGOUT ===================
+logoutBtn.addEventListener("click", async () => {
+  await signOut(auth);
+  // Clear dữ liệu cũ
+  carList.innerHTML = "";
+  maintenanceList.innerHTML = "";
+  if (chart) {
+    chart.destroy();
+    chart = null;
+  }
+  window.location.href = "login.html";
 });
 
-async function loadCars() {
+// =================== CHECK LOGIN ===================
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  userInfo.innerHTML = `<i class="fa-solid fa-user"></i> ${user.email}`;
+
+  // Load dữ liệu theo user.uid
+  await loadCars(user.uid);
+  await loadMaintenance(user.uid);
+  await loadExpenses(user.uid);
+});
+
+// =================== CARS ===================
+addCarForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const [bienSo, hang, model, namSX] = [...addCarForm.querySelectorAll("input")].map(i => i.value.trim());
+
+  await addDoc(collection(db, "cars"), {
+    uid: user.uid,
+    bienSo, hang, model, namSX,
+    createdAt: new Date()
+  });
+
+  addCarForm.reset();
+  loadCars(user.uid);
+});
+
+async function loadCars(uid) {
   carList.innerHTML = "";
-  const q = query(collection(db, "cars"), orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
-  querySnapshot.forEach((doc) => {
-    const c = doc.data();
+  const q = query(collection(db, "cars"), where("uid", "==", uid));
+  const snap = await getDocs(q);
+  snap.forEach(docSnap => {
+    const car = docSnap.data();
     carList.innerHTML += `
       <tr>
-        <td>${c.plate}</td>
-        <td>${c.brand}</td>
-        <td>${c.model}</td>
-        <td>${c.year}</td>
-        <td><button class="btn btn-danger btn-sm">Xóa</button></td>
-      </tr>
-    `;
+        <td>${car.bienSo}</td>
+        <td>${car.hang}</td>
+        <td>${car.model}</td>
+        <td>${car.namSX}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteCar('${docSnap.id}')">Xóa</button></td>
+      </tr>`;
   });
 }
-loadCars();
 
-// ================= LỊCH SỬ BẢO DƯỠNG =================
-const maintenanceForm = document.getElementById("maintenance-form");
-const maintenanceHistory = document.getElementById("maintenance-history");
+window.deleteCar = async function(id) {
+  const user = auth.currentUser;
+  if (!user) return;
+  await deleteDoc(doc(db, "cars", id));
+  loadCars(user.uid);
+};
 
+// =================== MAINTENANCE ===================
 maintenanceForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const [plate, content, date] = [...maintenanceForm.querySelectorAll("input")].map(i => i.value);
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const [bienSo, noiDung, ngay] = [...maintenanceForm.querySelectorAll("input")].map(i => i.value.trim());
 
   await addDoc(collection(db, "maintenance"), {
-    plate, content, date, createdAt: new Date()
+    uid: user.uid,
+    bienSo, noiDung, ngay
   });
 
   maintenanceForm.reset();
-  loadMaintenance();
+  loadMaintenance(user.uid);
 });
 
-async function loadMaintenance() {
-  maintenanceHistory.innerHTML = "";
-  const q = query(collection(db, "maintenance"), orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
-  querySnapshot.forEach((doc) => {
-    const m = doc.data();
-    maintenanceHistory.innerHTML += `
+async function loadMaintenance(uid) {
+  maintenanceList.innerHTML = "";
+  const q = query(collection(db, "maintenance"), where("uid", "==", uid));
+  const snap = await getDocs(q);
+  snap.forEach(docSnap => {
+    const m = docSnap.data();
+    maintenanceList.innerHTML += `
       <tr>
-        <td>${m.plate}</td>
-        <td>${m.content}</td>
-        <td>${m.date}</td>
-      </tr>
-    `;
+        <td>${m.bienSo}</td>
+        <td>${m.noiDung}</td>
+        <td>${m.ngay}</td>
+      </tr>`;
   });
 }
-loadMaintenance();
 
-// ================= CHI PHÍ BẢO DƯỠNG =================
-const expenseForm = document.getElementById("expense-form");
-const ctx = document.getElementById("expenseChart").getContext("2d");
-
+// =================== EXPENSES ===================
 expenseForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const [plate, amount, date] = [...expenseForm.querySelectorAll("input")].map(i => i.value);
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const [bienSo, soTien, ngay] = [...expenseForm.querySelectorAll("input")].map(i => i.value.trim());
 
   await addDoc(collection(db, "expenses"), {
-    plate, amount: Number(amount), date, createdAt: new Date()
+    uid: user.uid,
+    bienSo,
+    soTien: Number(soTien),
+    ngay
   });
 
   expenseForm.reset();
-  loadExpenses();
+  loadExpenses(user.uid);
 });
 
-async function loadExpenses() {
-  const q = query(collection(db, "expenses"), orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
+async function loadExpenses(uid) {
+  const q = query(collection(db, "expenses"), where("uid", "==", uid));
+  const snap = await getDocs(q);
 
   const labels = [];
-  const data = [];
-  querySnapshot.forEach((doc) => {
-    const e = doc.data();
-    labels.push(e.date);
-    data.push(e.amount);
+  const values = [];
+
+  snap.forEach(docSnap => {
+    const e = docSnap.data();
+    labels.push(e.bienSo);
+    values.push(e.soTien);
   });
 
-  new Chart(ctx, {
+  if (chart) chart.destroy();
+  chart = new Chart(expenseChart, {
     type: "bar",
     data: {
       labels,
       datasets: [{
         label: "Chi phí bảo dưỡng (VNĐ)",
-        data
+        data: values,
+        backgroundColor: "rgba(75, 192, 192, 0.5)"
       }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true }
+      }
     }
   });
 }
-loadExpenses();
+
 
 
 
