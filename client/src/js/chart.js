@@ -1,22 +1,23 @@
-import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
+// src/js/chart.js
+let chart;
 
-const ctx = document.getElementById("expenseChart").getContext("2d");
+export function updateChart(data) {
+  const ctx = document.getElementById("expenseChart").getContext("2d");
+  const grouped = {};
 
-export const expenseChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-    labels: [], // ngày/tháng
-    datasets: [{
-      label: "Chi phí bảo dưỡng (VNĐ)",
-      data: [],
-      backgroundColor: "rgba(54, 162, 235, 0.6)"
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: { position: "top" },
-      title: { display: true, text: "Thống kê chi phí bảo dưỡng" }
+  data.forEach(item => {
+    grouped[item.ngay] = (grouped[item.ngay] || 0) + item.soTien;
+  });
+
+  const labels = Object.keys(grouped);
+  const values = Object.values(grouped);
+
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{ label: "Chi phí bảo dưỡng (VNĐ)", data: values }]
     }
-  }
-});
+  });
+}
