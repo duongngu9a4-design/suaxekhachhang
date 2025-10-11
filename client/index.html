@@ -12,12 +12,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- CSS chính -->
+  <!-- CSS -->
   <link rel="stylesheet" href="./src/css/main.css">
 </head>
-<body class="bg-light">
 
-  <!-- Nếu chưa đăng nhập thì tự động chuyển về login.html -->
+<body class="bg-light">
   <script type="module">
     import { auth } from "./src/js/firebase-config.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
@@ -37,12 +36,9 @@
     });
   </script>
 
-  <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">
-        <i class="fa-solid fa-screwdriver-wrench"></i> Sửa Xe Khách Hàng
-      </a>
+      <a class="navbar-brand" href="#"><i class="fa-solid fa-screwdriver-wrench"></i> Sửa Xe Khách Hàng</a>
       <div class="d-flex">
         <span class="text-white me-3" id="user-info"><i class="fa-solid fa-user"></i> Khách</span>
         <button class="btn btn-outline-light btn-sm" id="logout-btn">Đăng xuất</button>
@@ -51,7 +47,6 @@
   </nav>
 
   <div class="container mt-4">
-    <!-- Tabs -->
     <ul class="nav nav-tabs" id="myTab" role="tablist">
       <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#car">Thông tin xe</button></li>
       <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#maintenance">Lịch sử bảo dưỡng</button></li>
@@ -59,7 +54,7 @@
     </ul>
 
     <div class="tab-content mt-3">
-      <!-- Xe -->
+      <!-- ============ THÔNG TIN XE ============ -->
       <div class="tab-pane fade show active" id="car">
         <h5>Thêm thông tin xe</h5>
         <form id="add-car-form" class="row g-3 mb-3">
@@ -69,14 +64,17 @@
           <div class="col-md-3"><input id="car-year" type="number" class="form-control" placeholder="Năm sản xuất" required></div>
           <div class="col-12"><button class="btn btn-primary">Thêm xe</button></div>
         </form>
+
         <h5>Danh sách xe</h5>
-        <table class="table table-striped">
-          <thead><tr><th>Biển số</th><th>Hãng</th><th>Model</th><th>Năm</th><th>Hành động</th></tr></thead>
+        <table class="table table-striped align-middle">
+          <thead>
+            <tr><th>Biển số</th><th>Hãng</th><th>Model</th><th>Năm</th><th>Hành động</th></tr>
+          </thead>
           <tbody id="car-list"></tbody>
         </table>
       </div>
 
-      <!-- Bảo dưỡng -->
+      <!-- ============ BẢO DƯỠNG ============ -->
       <div class="tab-pane fade" id="maintenance">
         <h5>Ghi lịch sử bảo dưỡng</h5>
         <form id="maintenance-form" class="row g-3 mb-3">
@@ -92,7 +90,7 @@
         </table>
       </div>
 
-      <!-- Chi phí -->
+      <!-- ============ CHI PHÍ ============ -->
       <div class="tab-pane fade" id="expense">
         <h5>Ghi chi phí bảo dưỡng</h5>
         <form id="expense-form" class="row g-3 mb-3">
@@ -111,43 +109,75 @@
     </div>
   </div>
 
-  <!-- Bootstrap 5 -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- CRUD Logic -->
   <script type="module">
     import { db } from "./src/js/firebase-config.js";
-    import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+    import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-    // ====== Car ======
+    // ===================== CAR =====================
     const carForm = document.getElementById("add-car-form");
     const carList = document.getElementById("car-list");
     const carCollection = collection(db, "cars");
+    let editingId = null;
 
     carForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      await addDoc(carCollection, {
+      const data = {
         plate: document.getElementById("car-plate").value,
         brand: document.getElementById("car-brand").value,
         model: document.getElementById("car-model").value,
         year: document.getElementById("car-year").value,
-      });
-      carForm.reset(); loadCars();
+      };
+
+      if (editingId) {
+        await updateDoc(doc(db, "cars", editingId), data);
+        editingId = null;
+        carForm.querySelector("button").textContent = "Thêm xe";
+      } else {
+        await addDoc(carCollection, data);
+      }
+
+      carForm.reset();
+      loadCars();
     });
+
     async function loadCars() {
       carList.innerHTML = "";
       const snapshot = await getDocs(carCollection);
       snapshot.forEach((d) => {
         const c = d.data();
-        carList.innerHTML += `<tr>
-          <td>${c.plate}</td><td>${c.brand}</td><td>${c.model}</td><td>${c.year}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="deleteCar('${d.id}')">Xóa</button></td></tr>`;
+        carList.innerHTML += `
+          <tr>
+            <td>${c.plate}</td>
+            <td>${c.brand}</td>
+            <td>${c.model}</td>
+            <td>${c.year}</td>
+            <td>
+              <button class="btn btn-sm btn-info text-white" onclick="editCar('${d.id}', '${c.plate}', '${c.brand}', '${c.model}', '${c.year}')">Sửa</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteCar('${d.id}')">Xóa</button>
+            </td>
+          </tr>`;
       });
     }
-    window.deleteCar = async (id) => { await deleteDoc(doc(db, "cars", id)); loadCars(); };
+
+    window.deleteCar = async (id) => {
+      await deleteDoc(doc(db, "cars", id));
+      loadCars();
+    };
+
+    window.editCar = (id, plate, brand, model, year) => {
+      document.getElementById("car-plate").value = plate;
+      document.getElementById("car-brand").value = brand;
+      document.getElementById("car-model").value = model;
+      document.getElementById("car-year").value = year;
+      editingId = id;
+      carForm.querySelector("button").textContent = "Cập nhật xe";
+    };
+
     loadCars();
 
-    // ====== Maintenance ======
+    // ===================== MAINTENANCE =====================
     const maintForm = document.getElementById("maintenance-form");
     const maintList = document.getElementById("maintenance-history");
     const maintCollection = collection(db, "maintenance");
@@ -171,12 +201,12 @@
     }
     loadMaint();
 
-    // ====== Expense + Chart ======
+    // ===================== EXPENSE =====================
     const expForm = document.getElementById("expense-form");
     const expList = document.getElementById("expense-list");
     const expCollection = collection(db, "expenses");
-
     let chart;
+
     expForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       await addDoc(expCollection, {
@@ -206,6 +236,7 @@
   </script>
 </body>
 </html>
+
 
 
 
