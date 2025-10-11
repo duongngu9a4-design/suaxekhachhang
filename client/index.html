@@ -1,19 +1,14 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Trang Chủ - Sửa Xe Khách Hàng</title>
-
-  <link rel="shortcut icon" href="./src/img/logo.png" type="image/x-icon">
-  <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- FontAwesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
-  <!-- Chart.js -->
+  <link rel="shortcut icon" href="./src/img/logo.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- CSS -->
-  <link rel="stylesheet" href="./src/css/main.css">
+  <link rel="stylesheet" href="./src/css/main.css" />
 </head>
 
 <body class="bg-light">
@@ -22,12 +17,8 @@
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
     onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-      } else {
-        document.getElementById("user-info").innerHTML =
-          `<i class="fa-solid fa-user"></i> ${user.email}`;
-      }
+      if (!user) window.location.href = "login.html";
+      else document.getElementById("user-info").innerHTML = `<i class="fa-solid fa-user"></i> ${user.email}`;
     });
 
     document.getElementById("logout-btn").addEventListener("click", async () => {
@@ -84,8 +75,8 @@
           <div class="col-12"><button class="btn btn-success">Lưu lịch sử</button></div>
         </form>
         <h5>Lịch sử bảo dưỡng</h5>
-        <table class="table table-bordered">
-          <thead><tr><th>Biển số</th><th>Nội dung</th><th>Ngày</th></tr></thead>
+        <table class="table table-bordered align-middle">
+          <thead><tr><th>Biển số</th><th>Nội dung</th><th>Ngày</th><th>Hành động</th></tr></thead>
           <tbody id="maintenance-history"></tbody>
         </table>
       </div>
@@ -101,8 +92,8 @@
         </form>
         <h5>Thống kê chi phí</h5>
         <canvas id="expenseChart" height="100"></canvas>
-        <table class="table mt-3">
-          <thead><tr><th>Biển số</th><th>Số tiền</th><th>Ngày</th></tr></thead>
+        <table class="table mt-3 align-middle">
+          <thead><tr><th>Biển số</th><th>Số tiền</th><th>Ngày</th><th>Hành động</th></tr></thead>
           <tbody id="expense-list"></tbody>
         </table>
       </div>
@@ -119,24 +110,22 @@
     const carForm = document.getElementById("add-car-form");
     const carList = document.getElementById("car-list");
     const carCollection = collection(db, "cars");
-    let editingId = null;
+    let editingCarId = null;
 
     carForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = {
-        plate: document.getElementById("car-plate").value,
-        brand: document.getElementById("car-brand").value,
-        model: document.getElementById("car-model").value,
-        year: document.getElementById("car-year").value,
+        plate: carForm["car-plate"].value,
+        brand: carForm["car-brand"].value,
+        model: carForm["car-model"].value,
+        year: carForm["car-year"].value,
       };
 
-      if (editingId) {
-        await updateDoc(doc(db, "cars", editingId), data);
-        editingId = null;
+      if (editingCarId) {
+        await updateDoc(doc(db, "cars", editingCarId), data);
+        editingCarId = null;
         carForm.querySelector("button").textContent = "Thêm xe";
-      } else {
-        await addDoc(carCollection, data);
-      }
+      } else await addDoc(carCollection, data);
 
       carForm.reset();
       loadCars();
@@ -149,94 +138,133 @@
         const c = d.data();
         carList.innerHTML += `
           <tr>
-            <td>${c.plate}</td>
-            <td>${c.brand}</td>
-            <td>${c.model}</td>
-            <td>${c.year}</td>
+            <td>${c.plate}</td><td>${c.brand}</td><td>${c.model}</td><td>${c.year}</td>
             <td>
-              <button class="btn btn-sm btn-info text-white" onclick="editCar('${d.id}', '${c.plate}', '${c.brand}', '${c.model}', '${c.year}')">Sửa</button>
+              <button class="btn btn-sm btn-info text-white" onclick="editCar('${d.id}','${c.plate}','${c.brand}','${c.model}','${c.year}')">Sửa</button>
               <button class="btn btn-sm btn-danger" onclick="deleteCar('${d.id}')">Xóa</button>
             </td>
           </tr>`;
       });
     }
-
-    window.deleteCar = async (id) => {
-      await deleteDoc(doc(db, "cars", id));
-      loadCars();
-    };
-
-    window.editCar = (id, plate, brand, model, year) => {
-      document.getElementById("car-plate").value = plate;
-      document.getElementById("car-brand").value = brand;
-      document.getElementById("car-model").value = model;
-      document.getElementById("car-year").value = year;
-      editingId = id;
+    window.deleteCar = async (id) => { await deleteDoc(doc(db, "cars", id)); loadCars(); };
+    window.editCar = (id, p, b, m, y) => {
+      carForm["car-plate"].value = p;
+      carForm["car-brand"].value = b;
+      carForm["car-model"].value = m;
+      carForm["car-year"].value = y;
+      editingCarId = id;
       carForm.querySelector("button").textContent = "Cập nhật xe";
     };
-
     loadCars();
 
     // ===================== MAINTENANCE =====================
     const maintForm = document.getElementById("maintenance-form");
     const maintList = document.getElementById("maintenance-history");
     const maintCollection = collection(db, "maintenance");
+    let editingMaintId = null;
 
     maintForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      await addDoc(maintCollection, {
-        plate: document.getElementById("maint-plate").value,
-        content: document.getElementById("maint-content").value,
-        date: document.getElementById("maint-date").value,
-      });
-      maintForm.reset(); loadMaint();
+      const data = {
+        plate: maintForm["maint-plate"].value,
+        content: maintForm["maint-content"].value,
+        date: maintForm["maint-date"].value,
+      };
+      if (editingMaintId) {
+        await updateDoc(doc(db, "maintenance", editingMaintId), data);
+        editingMaintId = null;
+        maintForm.querySelector("button").textContent = "Lưu lịch sử";
+      } else await addDoc(maintCollection, data);
+
+      maintForm.reset();
+      loadMaint();
     });
+
     async function loadMaint() {
       maintList.innerHTML = "";
       const snapshot = await getDocs(maintCollection);
       snapshot.forEach((d) => {
         const m = d.data();
-        maintList.innerHTML += `<tr><td>${m.plate}</td><td>${m.content}</td><td>${m.date}</td></tr>`;
+        maintList.innerHTML += `
+          <tr>
+            <td>${m.plate}</td><td>${m.content}</td><td>${m.date}</td>
+            <td>
+              <button class="btn btn-sm btn-info text-white" onclick="editMaint('${d.id}','${m.plate}','${m.content}','${m.date}')">Sửa</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteMaint('${d.id}')">Xóa</button>
+            </td>
+          </tr>`;
       });
     }
+
+    window.deleteMaint = async (id) => { await deleteDoc(doc(db, "maintenance", id)); loadMaint(); };
+    window.editMaint = (id, p, c, dte) => {
+      maintForm["maint-plate"].value = p;
+      maintForm["maint-content"].value = c;
+      maintForm["maint-date"].value = dte;
+      editingMaintId = id;
+      maintForm.querySelector("button").textContent = "Cập nhật lịch sử";
+    };
     loadMaint();
 
     // ===================== EXPENSE =====================
     const expForm = document.getElementById("expense-form");
     const expList = document.getElementById("expense-list");
     const expCollection = collection(db, "expenses");
+    let editingExpId = null;
     let chart;
 
     expForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      await addDoc(expCollection, {
-        plate: document.getElementById("exp-plate").value,
-        amount: +document.getElementById("exp-amount").value,
-        date: document.getElementById("exp-date").value,
-      });
-      expForm.reset(); loadExpense();
+      const data = {
+        plate: expForm["exp-plate"].value,
+        amount: +expForm["exp-amount"].value,
+        date: expForm["exp-date"].value,
+      };
+      if (editingExpId) {
+        await updateDoc(doc(db, "expenses", editingExpId), data);
+        editingExpId = null;
+        expForm.querySelector("button").textContent = "Lưu chi phí";
+      } else await addDoc(expCollection, data);
+      expForm.reset();
+      loadExpense();
     });
 
     async function loadExpense() {
       expList.innerHTML = "";
       const snapshot = await getDocs(expCollection);
-      let labels = [], data = [];
+      const labels = [], data = [];
       snapshot.forEach((d) => {
         const e = d.data();
-        expList.innerHTML += `<tr><td>${e.plate}</td><td>${e.amount}</td><td>${e.date}</td></tr>`;
-        labels.push(e.date); data.push(e.amount);
+        expList.innerHTML += `
+          <tr>
+            <td>${e.plate}</td><td>${e.amount}</td><td>${e.date}</td>
+            <td>
+              <button class="btn btn-sm btn-info text-white" onclick="editExp('${d.id}','${e.plate}','${e.amount}','${e.date}')">Sửa</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteExp('${d.id}')">Xóa</button>
+            </td>
+          </tr>`;
+        labels.push(e.date);
+        data.push(e.amount);
       });
+
       if (chart) chart.destroy();
       chart = new Chart(document.getElementById("expenseChart"), {
         type: "bar",
         data: { labels, datasets: [{ label: "Chi phí (VNĐ)", data }] },
       });
     }
+
+    window.deleteExp = async (id) => { await deleteDoc(doc(db, "expenses", id)); loadExpense(); };
+    window.editExp = (id, p, a, dte) => {
+      expForm["exp-plate"].value = p;
+      expForm["exp-amount"].value = a;
+      expForm["exp-date"].value = dte;
+      editingExpId = id;
+      expForm.querySelector("button").textContent = "Cập nhật chi phí";
+    };
     loadExpense();
   </script>
 </body>
 </html>
-
-
 
 
