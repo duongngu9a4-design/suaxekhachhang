@@ -1,46 +1,75 @@
-import { auth, db } from './firebase-config.js';
-import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { auth } from './firebase-config.js';
+import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
 const form = document.querySelector("#register-form");
-const inputusername = document.querySelector("#username");
-const inputemail = document.querySelector("#email");
-const inputpwd = document.querySelector("#password");
-const inputconfirmpwd = document.querySelector("#confirm-password");
+const inputUsername = document.querySelector("#username");
+const inputEmail = document.querySelector("#email");
+const inputPwd = document.querySelector("#password");
+const inputCfPwd = document.querySelector("#confirm-password");
 
-// Bắt sự kiện submit form
-form.addEventListener("submit", async (e) => {
+// Modal
+const notifyModalEl = document.getElementById('notifyModal');
+const notifyModal = new bootstrap.Modal(notifyModalEl);
+const notifyMessage = document.getElementById('notifyMessage');
+const notifyModalLabel = document.getElementById("notifyModalLabel");
+
+function showModal(message, type="info") {
+  const header = notifyModalLabel.parentElement;
+  header.className = "modal-header text-white";
+  header.classList.remove("bg-primary","bg-success","bg-danger","bg-warning");
+  if(type==="success") header.classList.add("bg-success");
+  else if(type==="danger") header.classList.add("bg-danger");
+  else if(type==="warning") header.classList.add("bg-warning");
+  else header.classList.add("bg-primary");
+
+  notifyMessage.innerHTML = message;
+  notifyModal.show();
+}
+
+form.addEventListener("submit", async e=>{
   e.preventDefault();
 
-  const username = inputusername.value;
-  const email = inputemail.value;
-  const password = inputpwd.value;
-  const confirmPassword = inputconfirmpwd.value;
+  const username = inputUsername.value.trim();
+  const email = inputEmail.value.trim();
+  const password = inputPwd.value.trim();
+  const confirmPwd = inputCfPwd.value.trim();
 
-  if (password !== confirmPassword) {
-    alert("Mật khẩu không khớp");
+  if(!username || !email || !password || !confirmPwd){
+    showModal("⚠️ Vui lòng điền đầy đủ thông tin!", "warning");
     return;
   }
 
-  try {
-    // 1. Tạo user trong Firebase Authentication
+  if(password !== confirmPwd){
+    showModal("⚠️ Mật khẩu và nhập lại mật khẩu không khớp!", "warning");
+    return;
+  }
+
+  try{
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // 2. Lưu thêm thông tin vào Firestore
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      username: username,
-      email: email,
-      createdAt: new Date()
-    });
+    // Cập nhật displayName
+    await updateProfile(user, { displayName: username });
 
-    alert("Đăng ký thành công!");
-    form.reset();
+    showModal(`🎉 Đăng ký thành công! Chào mừng <strong>${user.email}</strong>!`, "success");
 
-  } catch (error) {
-    console.error("Error: ", error);
-    alert(error.message);
+    setTimeout(()=> window.location.href="login.html", 1500);
+
+  }catch(error){
+    console.error("Register error:", error);
+    let errorMsg = "❌ Đăng ký thất bại, thử lại!";
+    switch(error.code){
+      case "auth/email-already-in-use":
+        errorMsg = "⚠️ Email này đã được sử dụng!";
+        break;
+      case "auth/invalid-email":
+        errorMsg = "⚠️ Email không hợp lệ!";
+        break;
+      case "auth/weak-password":
+        errorMsg = "⚠️ Mật khẩu quá yếu, nên ít nhất 6 ký tự!";
+        break;
+    }
+    showModal(errorMsg, "danger");
   }
 });
 
