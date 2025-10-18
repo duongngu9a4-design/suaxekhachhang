@@ -114,10 +114,8 @@ body {
   </div>
 </div>
 
-<!-- Toast container + Confirm modal (thêm, không xóa code cũ) -->
+<!-- Toast container + Confirm modal -->
 <div class="toast-container" id="toastContainer"></div>
-
-<!-- Modal xác nhận xóa (sẽ thông báo "xóa hết 1 bản ghi") -->
 <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-warning">
@@ -141,16 +139,9 @@ import { collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } 
 const logoutBtn = document.getElementById("logout-btn");
 const userInfo = document.getElementById("user-info");
 
-// ========== HÀM HỖ TRỢ THÔNG BÁO (TOAST) ==========
+// ========= HÀM HỖ TRỢ TOAST =========
 function showToast(message, type = "info") {
-  // type: "success","danger","warning","info"
-  const colorClass = {
-    success: "bg-success text-white",
-    danger: "bg-danger text-white",
-    warning: "bg-warning",
-    info: "bg-primary text-white"
-  }[type] || "bg-primary text-white";
-
+  const colorClass = { success: "bg-success text-white", danger: "bg-danger text-white", warning: "bg-warning", info: "bg-primary text-white" }[type] || "bg-primary text-white";
   const container = document.getElementById("toastContainer");
   const toast = document.createElement("div");
   toast.className = `toast align-items-center ${colorClass} border-0 d-flex mb-2`;
@@ -158,17 +149,14 @@ function showToast(message, type = "info") {
   toast.setAttribute("aria-live", "assertive");
   toast.setAttribute("aria-atomic", "true");
   toast.style.minWidth = "200px";
-  toast.innerHTML = `
-    <div class="toast-body">${message}</div>
-    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-  `;
+  toast.innerHTML = `<div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>`;
   container.appendChild(toast);
   const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
   bsToast.show();
   toast.addEventListener("hidden.bs.toast", () => toast.remove());
 }
 
-// ========== HÀM XÁC NHẬN (Modal) ==========
+// ========= HÀM XÁC NHẬN =========
 function showConfirmDelete(message) {
   return new Promise((resolve) => {
     const modalEl = document.getElementById("confirmDeleteModal");
@@ -178,10 +166,7 @@ function showConfirmDelete(message) {
     modalBody.innerHTML = message;
     const modal = new bootstrap.Modal(modalEl);
 
-    const cleanup = () => {
-      okBtn.removeEventListener("click", onOk);
-      cancelBtn.removeEventListener("click", onCancel);
-    };
+    const cleanup = () => { okBtn.removeEventListener("click", onOk); cancelBtn.removeEventListener("click", onCancel); };
     const onOk = () => { cleanup(); modal.hide(); resolve(true); };
     const onCancel = () => { cleanup(); modal.hide(); resolve(false); };
 
@@ -195,7 +180,6 @@ function showConfirmDelete(message) {
 logoutBtn.onclick = async () => {
   console.log("Đang đăng xuất...");
   await signOut(auth);
-  // thông báo đăng xuất
   showToast("Đăng xuất thành công", "info");
   window.location.href = "login.html";
 };
@@ -321,7 +305,25 @@ function initApp(uid){
 
   maintForm.addEventListener("submit", async e=>{
     e.preventDefault();
-    const data={uid, plate:maintForm.plate.value, content:maintForm.content.value, date:maintForm.date.value};
+
+    const plateRaw = maintForm.plate.value || "";
+    const plate = plateRaw.trim().toUpperCase();
+    const content = maintForm.content.value || "";
+    const date = maintForm.date.value || "";
+
+    if(!plate || !content || !date){
+      showToast("Vui lòng điền đầy đủ thông tin bảo dưỡng!", "warning");
+      return;
+    }
+
+    // kiểm tra xem xe đã tồn tại trong collection cars chưa
+    const carSnap = await getDocs(query(carCollection, where("uid","==",uid), where("plate","==",plate)));
+    if(carSnap.empty){
+      showToast(`❌ Xe với biển số ${plate} chưa tồn tại! Vui lòng thêm xe trước khi ghi lịch sử.`, "danger");
+      return;
+    }
+
+    const data={uid, plate, content, date};
     if(editingMaintId){
       await updateDoc(doc(db,"maintenance",editingMaintId), data);
       editingMaintId=null;
@@ -360,7 +362,6 @@ function initApp(uid){
   }
   window.editMaint=(id,p,c,dte)=>{ maintForm.plate.value=p; maintForm.content.value=c; maintForm.date.value=dte; editingMaintId=id; maintForm.querySelector("button").textContent="Cập nhật lịch sử"; }
   window.deleteMaint=async id=>{
-    // small confirmation for maint delete
     const ok = await showConfirmDelete("Bạn có chắc muốn xóa lịch sử bảo dưỡng này? (Không thể hoàn tác)");
     if(!ok) return;
     await deleteDoc(doc(db,"maintenance",id));
@@ -378,7 +379,25 @@ function initApp(uid){
 
   expForm.addEventListener("submit", async e=>{
     e.preventDefault();
-    const data={uid, plate:expForm.plate.value, amount:+expForm.amount.value, date:expForm.date.value};
+
+    const plateRaw = expForm.plate.value || "";
+    const plate = plateRaw.trim().toUpperCase();
+    const amount = +expForm.amount.value;
+    const date = expForm.date.value || "";
+
+    if(!plate || !amount || !date){
+      showToast("Vui lòng điền đầy đủ thông tin chi phí!", "warning");
+      return;
+    }
+
+    // kiểm tra xem xe đã tồn tại trong collection cars chưa
+    const carSnap = await getDocs(query(carCollection, where("uid","==",uid), where("plate","==",plate)));
+    if(carSnap.empty){
+      showToast(`❌ Xe với biển số ${plate} chưa tồn tại! Vui lòng thêm xe trước khi ghi chi phí.`, "danger");
+      return;
+    }
+
+    const data={uid, plate, amount, date};
     if(editingExpId){
       await updateDoc(doc(db,"expenses",editingExpId), data);
       editingExpId=null;
