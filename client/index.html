@@ -1,243 +1,283 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trang Chủ - Sửa Xe Khách Hàng</title>
-  <link rel="shortcut icon" href="./src/img/logo.png" type="image/x-icon" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="./src/css/main.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trang Chủ - Sửa Xe Khách Hàng</title>
+<link rel="shortcut icon" href="./src/img/logo.png" type="image/x-icon">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+body {
+  font-family: "Arial", "DejaVu Sans", sans-serif;
+  background-color: #f8f9fa;
+}
+</style>
 </head>
+<body>
 
-<body class="bg-light">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#"><i class="fa-solid fa-screwdriver-wrench"></i> Sửa Xe Khách Hàng</a>
-      <div class="d-flex">
-        <span class="text-white me-3" id="user-info"><i class="fa-solid fa-user"></i> Khách</span>
-        <button class="btn btn-outline-light btn-sm" id="logout-btn">Đăng xuất</button>
-      </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#"><i class="fa-solid fa-screwdriver-wrench"></i> Sửa Xe Khách Hàng</a>
+    <div class="d-flex">
+      <span class="text-white me-3" id="user-info"><i class="fa-solid fa-user"></i> Khách</span>
+      <button class="btn btn-outline-light btn-sm" id="logout-btn">Đăng xuất</button>
     </div>
-  </nav>
+  </div>
+</nav>
 
-  <div class="container mt-4">
-    <ul class="nav nav-tabs">
-      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#car">Thông tin xe</button></li>
-      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#maintenance">Lịch sử bảo dưỡng</button></li>
-      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#expense">Chi phí bảo dưỡng</button></li>
-    </ul>
+<div class="container mt-4">
+  <ul class="nav nav-tabs">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#car">Thông tin xe</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#maintenance">Lịch sử bảo dưỡng</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#expense">Chi phí bảo dưỡng</button></li>
+  </ul>
 
-    <div class="tab-content mt-3">
-      <!-- ================== THÔNG TIN XE ================== -->
-      <div class="tab-pane fade show active" id="car">
-        <h5>Thêm thông tin xe</h5>
-        <form id="add-car-form" class="row g-3 mb-3">
-          <div class="col-md-3"><input name="plate" type="text" class="form-control" placeholder="Biển số" required></div>
-          <div class="col-md-3"><input name="brand" type="text" class="form-control" placeholder="Hãng" required></div>
-          <div class="col-md-3"><input name="model" type="text" class="form-control" placeholder="Model" required></div>
-          <div class="col-md-3"><input name="year" type="number" class="form-control" placeholder="Năm sản xuất" required></div>
-          <div class="col-12"><button class="btn btn-primary">Thêm xe</button></div>
-        </form>
+  <div class="tab-content mt-3">
+    <!-- Thông tin xe -->
+    <div class="tab-pane fade show active" id="car">
+      <h5>Thêm/Sửa thông tin xe</h5>
+      <form id="add-car-form" class="row g-3 mb-3">
+        <div class="col-md-3"><input name="plate" type="text" class="form-control" placeholder="Biển số" required></div>
+        <div class="col-md-3"><input name="brand" type="text" class="form-control" placeholder="Hãng" required></div>
+        <div class="col-md-3"><input name="model" type="text" class="form-control" placeholder="Model" required></div>
+        <div class="col-md-3"><input name="year" type="number" class="form-control" placeholder="Năm sản xuất" required></div>
+        <div class="col-12"><button class="btn btn-primary">Thêm xe</button></div>
+      </form>
+      <h5>Danh sách xe</h5>
+      <table class="table table-striped align-middle" id="car-list">
+        <thead><tr><th>Biển số</th><th>Hãng</th><th>Model</th><th>Năm</th><th>Hành động</th></tr></thead>
+        <tbody id="car-list-body"></tbody>
+      </table>
+    </div>
 
-        <h5>Danh sách xe</h5>
-        <table class="table table-striped align-middle">
-          <thead><tr><th>Biển số</th><th>Hãng</th><th>Model</th><th>Năm</th><th>Hành động</th></tr></thead>
-          <tbody id="car-list"></tbody>
-        </table>
+    <!-- Lịch sử bảo dưỡng -->
+    <div class="tab-pane fade" id="maintenance">
+      <h5>Ghi/Sửa lịch sử bảo dưỡng</h5>
+      <form id="maintenance-form" class="row g-3 mb-3">
+        <div class="col-md-3"><input name="plate" type="text" class="form-control" placeholder="Biển số" required></div>
+        <div class="col-md-5"><input name="content" type="text" class="form-control" placeholder="Nội dung bảo dưỡng" required></div>
+        <div class="col-md-4"><input name="date" type="date" class="form-control" required></div>
+        <div class="col-12"><button class="btn btn-success">Lưu lịch sử</button></div>
+      </form>
+      <h5>Lịch sử bảo dưỡng</h5>
+      <table class="table table-bordered align-middle" id="maintenance-list">
+        <thead><tr><th>Biển số</th><th>Nội dung</th><th>Ngày</th><th>Hành động</th></tr></thead>
+        <tbody id="maintenance-list-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Chi phí -->
+    <div class="tab-pane fade" id="expense">
+      <h5>Ghi/Sửa chi phí bảo dưỡng</h5>
+      <form id="expense-form" class="row g-3 mb-3">
+        <div class="col-md-4"><input name="plate" type="text" class="form-control" placeholder="Biển số" required></div>
+        <div class="col-md-4"><input name="amount" type="number" class="form-control" placeholder="Số tiền (VNĐ)" required></div>
+        <div class="col-md-4"><input name="date" type="date" class="form-control" required></div>
+        <div class="col-12"><button class="btn btn-warning">Lưu chi phí</button></div>
+      </form>
+      <h5>Thống kê chi phí</h5>
+      <canvas id="expenseChart" height="100"></canvas>
+      <table class="table mt-3 align-middle" id="expense-list">
+        <thead><tr><th>Biển số</th><th>Số tiền</th><th>Ngày</th><th>Hành động</th></tr></thead>
+        <tbody id="expense-list-body"></tbody>
+      </table>
+    </div>
+
+    <button class="btn btn-secondary mt-3" id="export-pdf-btn">Xuất PDF toàn bộ</button>
+  </div>
+</div>
+
+<!-- Modal cảnh báo bảo dưỡng -->
+<div class="modal fade" id="maintenanceAlertModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title">Thông báo bảo dưỡng</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-
-      <!-- ================== BẢO DƯỠNG ================== -->
-      <div class="tab-pane fade" id="maintenance">
-        <h5>Ghi lịch sử bảo dưỡng</h5>
-        <form id="maintenance-form" class="row g-3 mb-3">
-          <div class="col-md-3"><input name="plate" type="text" class="form-control" placeholder="Biển số" required></div>
-          <div class="col-md-5"><input name="content" type="text" class="form-control" placeholder="Nội dung bảo dưỡng" required></div>
-          <div class="col-md-4"><input name="date" type="date" class="form-control" required></div>
-          <div class="col-12"><button class="btn btn-success">Lưu lịch sử</button></div>
-        </form>
-        <h5>Lịch sử bảo dưỡng</h5>
-        <table class="table table-bordered align-middle">
-          <thead><tr><th>Biển số</th><th>Nội dung</th><th>Ngày</th><th>Hành động</th></tr></thead>
-          <tbody id="maintenance-history"></tbody>
-        </table>
-      </div>
-
-      <!-- ================== CHI PHÍ ================== -->
-      <div class="tab-pane fade" id="expense">
-        <h5>Ghi chi phí bảo dưỡng</h5>
-        <form id="expense-form" class="row g-3 mb-3">
-          <div class="col-md-4"><input name="plate" type="text" class="form-control" placeholder="Biển số" required></div>
-          <div class="col-md-4"><input name="amount" type="number" class="form-control" placeholder="Số tiền (VNĐ)" required></div>
-          <div class="col-md-4"><input name="date" type="date" class="form-control" required></div>
-          <div class="col-12"><button class="btn btn-warning">Lưu chi phí</button></div>
-        </form>
-        <h5>Thống kê chi phí</h5>
-        <canvas id="expenseChart" height="100"></canvas>
-        <table class="table mt-3 align-middle">
-          <thead><tr><th>Biển số</th><th>Số tiền</th><th>Ngày</th><th>Hành động</th></tr></thead>
-          <tbody id="expense-list"></tbody>
-        </table>
+      <div class="modal-body" id="maintenanceAlertBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
       </div>
     </div>
   </div>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+import { auth, db } from "./src/js/firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-  <script type="module">
-    import { auth, db } from "./src/js/firebase-config.js";
-    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import { collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+const logoutBtn = document.getElementById("logout-btn");
+const userInfo = document.getElementById("user-info");
 
-    const logoutBtn = document.getElementById("logout-btn");
-    const userInfo = document.getElementById("user-info");
+logoutBtn.onclick = async () => {
+  console.log("Đang đăng xuất...");
+  await signOut(auth);
+  window.location.href = "login.html";
+};
 
-    logoutBtn.onclick = async () => { await signOut(auth); window.location.href = "login.html"; };
+onAuthStateChanged(auth, user => {
+  if (!user) return window.location.href = "login.html";
+  userInfo.innerHTML = `<i class="fa-solid fa-user"></i> ${user.email}`;
+  initApp(user.uid);
+});
 
-    onAuthStateChanged(auth, (user) => {
-      if (!user) return (window.location.href = "login.html");
-      userInfo.innerHTML = `<i class="fa-solid fa-user"></i> ${user.email}`;
-      initApp(user.uid);
+function initApp(uid){
+  const { jsPDF } = window.jspdf;
+
+  // ================= XE =================
+  const carForm = document.getElementById("add-car-form");
+  const carBody = document.getElementById("car-list-body");
+  const carCollection = collection(db,"cars");
+  let editingCarId = null;
+
+  carForm.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const data={uid, plate:carForm.plate.value, brand:carForm.brand.value, model:carForm.model.value, year:carForm.year.value};
+    if(editingCarId){ await updateDoc(doc(db,"cars",editingCarId), data); editingCarId=null; carForm.querySelector("button").textContent="Thêm xe"; }
+    else await addDoc(carCollection,data);
+    carForm.reset(); loadCars();
+  });
+
+  async function loadCars(){
+    carBody.innerHTML="";
+    const snap = await getDocs(query(carCollection, where("uid","==",uid)));
+    snap.forEach(d=>{
+      const c=d.data();
+      carBody.innerHTML += `<tr>
+        <td>${c.plate}</td><td>${c.brand}</td><td>${c.model}</td><td>${c.year}</td>
+        <td>
+          <button class="btn btn-sm btn-info text-white" onclick="editCar('${d.id}','${c.plate}','${c.brand}','${c.model}','${c.year}')">Sửa</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteCar('${d.id}')">Xóa</button>
+        </td>
+      </tr>`;
     });
+  }
+  window.editCar=(id,p,b,m,y)=>{ carForm.plate.value=p; carForm.brand.value=b; carForm.model.value=m; carForm.year.value=y; editingCarId=id; carForm.querySelector("button").textContent="Cập nhật xe"; }
+  window.deleteCar=async id=>{ await deleteDoc(doc(db,"cars",id)); loadCars(); }
+  loadCars();
 
-    function initApp(uid) {
-      // ===================== CAR =====================
-      const carForm = document.getElementById("add-car-form");
-      const carList = document.getElementById("car-list");
-      const carCollection = collection(db, "cars");
-      let editingCarId = null;
+  // ================= BẢO DƯỠNG =================
+  const maintForm=document.getElementById("maintenance-form");
+  const maintBody=document.getElementById("maintenance-list-body");
+  const maintCollection=collection(db,"maintenance");
+  let editingMaintId=null;
 
-      carForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const data = {
-          uid, plate: carForm.plate.value, brand: carForm.brand.value,
-          model: carForm.model.value, year: carForm.year.value
-        };
-        if (editingCarId) {
-          await updateDoc(doc(db, "cars", editingCarId), data);
-          editingCarId = null;
-          carForm.querySelector("button").textContent = "Thêm xe";
-        } else await addDoc(carCollection, data);
-        carForm.reset(); loadCars();
-      });
+  maintForm.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const data={uid, plate:maintForm.plate.value, content:maintForm.content.value, date:maintForm.date.value};
+    if(editingMaintId){ await updateDoc(doc(db,"maintenance",editingMaintId), data); editingMaintId=null; maintForm.querySelector("button").textContent="Lưu lịch sử"; }
+    else await addDoc(maintCollection,data);
+    maintForm.reset(); loadMaint();
+  });
 
-      async function loadCars() {
-        carList.innerHTML = "";
-        const q = query(carCollection, where("uid", "==", uid));
-        const snapshot = await getDocs(q);
-        snapshot.forEach((d) => {
-          const c = d.data();
-          carList.innerHTML += `
-            <tr>
-              <td>${c.plate}</td><td>${c.brand}</td><td>${c.model}</td><td>${c.year}</td>
-              <td>
-                <button class="btn btn-sm btn-info text-white" onclick="editCar('${d.id}','${c.plate}','${c.brand}','${c.model}','${c.year}')">Sửa</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteCar('${d.id}')">Xóa</button>
-              </td>
-            </tr>`;
-        });
-      }
-      window.deleteCar = async (id) => { await deleteDoc(doc(db, "cars", id)); loadCars(); };
-      window.editCar = (id, p, b, m, y) => {
-        carForm.plate.value = p; carForm.brand.value = b; carForm.model.value = m; carForm.year.value = y;
-        editingCarId = id; carForm.querySelector("button").textContent = "Cập nhật xe";
-      };
-      loadCars();
-
-      // ===================== MAINTENANCE =====================
-      const maintForm = document.getElementById("maintenance-form");
-      const maintList = document.getElementById("maintenance-history");
-      const maintCollection = collection(db, "maintenance");
-      let editingMaintId = null;
-
-      maintForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const data = {
-          uid, plate: maintForm.plate.value, content: maintForm.content.value, date: maintForm.date.value
-        };
-        if (editingMaintId) {
-          await updateDoc(doc(db, "maintenance", editingMaintId), data);
-          editingMaintId = null;
-          maintForm.querySelector("button").textContent = "Lưu lịch sử";
-        } else await addDoc(maintCollection, data);
-        maintForm.reset(); loadMaint();
-      });
-
-      async function loadMaint() {
-        maintList.innerHTML = "";
-        const q = query(maintCollection, where("uid", "==", uid));
-        const snapshot = await getDocs(q);
-        snapshot.forEach((d) => {
-          const m = d.data();
-          maintList.innerHTML += `
-            <tr>
-              <td>${m.plate}</td><td>${m.content}</td><td>${m.date}</td>
-              <td>
-                <button class="btn btn-sm btn-info text-white" onclick="editMaint('${d.id}','${m.plate}','${m.content}','${m.date}')">Sửa</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteMaint('${d.id}')">Xóa</button>
-              </td>
-            </tr>`;
-        });
-      }
-
-      window.deleteMaint = async (id) => { await deleteDoc(doc(db, "maintenance", id)); loadMaint(); };
-      window.editMaint = (id, p, c, dte) => {
-        maintForm.plate.value = p; maintForm.content.value = c; maintForm.date.value = dte;
-        editingMaintId = id; maintForm.querySelector("button").textContent = "Cập nhật lịch sử";
-      };
-      loadMaint();
-
-      // ===================== EXPENSE =====================
-      const expForm = document.getElementById("expense-form");
-      const expList = document.getElementById("expense-list");
-      const expCollection = collection(db, "expenses");
-      let editingExpId = null; let chart;
-
-      expForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const data = { uid, plate: expForm.plate.value, amount: +expForm.amount.value, date: expForm.date.value };
-        if (editingExpId) {
-          await updateDoc(doc(db, "expenses", editingExpId), data);
-          editingExpId = null;
-          expForm.querySelector("button").textContent = "Lưu chi phí";
-        } else await addDoc(expCollection, data);
-        expForm.reset(); loadExpense();
-      });
-
-      async function loadExpense() {
-        expList.innerHTML = "";
-        const q = query(expCollection, where("uid", "==", uid));
-        const snapshot = await getDocs(q);
-        const labels = [], data = [];
-        snapshot.forEach((d) => {
-          const e = d.data();
-          expList.innerHTML += `
-            <tr>
-              <td>${e.plate}</td><td>${e.amount}</td><td>${e.date}</td>
-              <td>
-                <button class="btn btn-sm btn-info text-white" onclick="editExp('${d.id}','${e.plate}','${e.amount}','${e.date}')">Sửa</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteExp('${d.id}')">Xóa</button>
-              </td>
-            </tr>`;
-          labels.push(e.date); data.push(e.amount);
-        });
-
-        if (chart) chart.destroy();
-        chart = new Chart(document.getElementById("expenseChart"), {
-          type: "bar",
-          data: { labels, datasets: [{ label: "Chi phí (VNĐ)", data }] },
-        });
-      }
-
-      window.deleteExp = async (id) => { await deleteDoc(doc(db, "expenses", id)); loadExpense(); };
-      window.editExp = (id, p, a, dte) => {
-        expForm.plate.value = p; expForm.amount.value = a; expForm.date.value = dte;
-        editingExpId = id; expForm.querySelector("button").textContent = "Cập nhật chi phí";
-      };
-      loadExpense();
+  async function loadMaint(){
+    maintBody.innerHTML="";
+    const snap=await getDocs(query(maintCollection, where("uid","==",uid)));
+    const dueCars=[];
+    snap.forEach(d=>{
+      const m=d.data();
+      maintBody.innerHTML += `<tr>
+        <td>${m.plate}</td><td>${m.content}</td><td>${m.date}</td>
+        <td>
+          <button class="btn btn-sm btn-info text-white" onclick="editMaint('${d.id}','${m.plate}','${m.content}','${m.date}')">Sửa</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteMaint('${d.id}')">Xóa</button>
+        </td>
+      </tr>`;
+      const diff=(new Date(m.date)-new Date())/(1000*60*60*24);
+      if(diff>=0 && diff<=7) dueCars.push(`${m.plate} - ${m.content} - ${m.date}`);
+    });
+    if(dueCars.length>0){
+      document.getElementById("maintenanceAlertBody").innerHTML=`Các xe sắp đến hạn bảo dưỡng:<br>${dueCars.join("<br>")}`;
+      new bootstrap.Modal(document.getElementById("maintenanceAlertModal")).show();
     }
-  </script>
+  }
+  window.editMaint=(id,p,c,dte)=>{ maintForm.plate.value=p; maintForm.content.value=c; maintForm.date.value=dte; editingMaintId=id; maintForm.querySelector("button").textContent="Cập nhật lịch sử"; }
+  window.deleteMaint=async id=>{ await deleteDoc(doc(db,"maintenance",id)); loadMaint(); }
+  loadMaint();
+
+  // ================= CHI PHÍ =================
+  const expForm=document.getElementById("expense-form");
+  const expBody=document.getElementById("expense-list-body");
+  const expCollection=collection(db,"expenses");
+  let editingExpId=null;
+  let chart;
+
+  expForm.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const data={uid, plate:expForm.plate.value, amount:+expForm.amount.value, date:expForm.date.value};
+    if(editingExpId){ await updateDoc(doc(db,"expenses",editingExpId), data); editingExpId=null; expForm.querySelector("button").textContent="Lưu chi phí"; }
+    else await addDoc(expCollection,data);
+    expForm.reset(); loadExpense();
+  });
+
+  async function loadExpense(){
+    expBody.innerHTML="";
+    const snap=await getDocs(query(expCollection, where("uid","==",uid)));
+    const labels=[], dataSet=[];
+    snap.forEach(d=>{
+      const e=d.data();
+      expBody.innerHTML += `<tr>
+        <td>${e.plate}</td><td>${e.amount}</td><td>${e.date}</td>
+        <td>
+          <button class="btn btn-sm btn-info text-white" onclick="editExp('${d.id}','${e.plate}','${e.amount}','${e.date}')">Sửa</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteExp('${d.id}')">Xóa</button>
+        </td>
+      </tr>`;
+      labels.push(e.date); dataSet.push(e.amount);
+    });
+    if(chart) chart.destroy();
+    chart=new Chart(document.getElementById("expenseChart"), {type:"bar", data:{labels, datasets:[{label:"Chi phí (VNĐ)", data:dataSet, backgroundColor:"#0d6efd"}]}});
+  }
+  window.editExp=(id,p,a,dte)=>{ expForm.plate.value=p; expForm.amount.value=a; expForm.date.value=dte; editingExpId=id; expForm.querySelector("button").textContent="Cập nhật chi phí"; }
+  window.deleteExp=async id=>{ await deleteDoc(doc(db,"expenses",id)); loadExpense(); }
+  loadExpense();
+
+  // ================= XUẤT PDF =================
+  document.getElementById("export-pdf-btn").onclick=async ()=>{
+    const pdf=new jsPDF("p","mm","a4");
+    let y=15;
+
+    // Xe
+    const carSnap=await getDocs(query(carCollection, where("uid","==",uid)));
+    const carTable=[]; carSnap.forEach(d=>{ const c=d.data(); carTable.push([c.plate,c.brand,c.model,c.year]); });
+    pdf.text("Danh sách xe",14,y);
+    pdf.autoTable({ head:[["Biển số","Hãng","Model","Năm"]], body:carTable, startY:y+5 });
+    y=pdf.lastAutoTable.finalY+10;
+
+    // Bảo dưỡng
+    const maintSnap=await getDocs(query(maintCollection, where("uid","==",uid)));
+    const maintTable=[]; maintSnap.forEach(d=>{ const m=d.data(); maintTable.push([m.plate,m.content,m.date]); });
+    pdf.text("Lịch sử bảo dưỡng",14,y);
+    pdf.autoTable({ head:[["Biển số","Nội dung","Ngày"]], body:maintTable, startY:y+5 });
+    y=pdf.lastAutoTable.finalY+10;
+
+    // Chi phí
+    const expSnap=await getDocs(query(expCollection, where("uid","==",uid)));
+    const expTable=[]; expSnap.forEach(d=>{ const e=d.data(); expTable.push([e.plate,e.amount,e.date]); });
+    pdf.text("Chi phí bảo dưỡng",14,y);
+    pdf.autoTable({ head:[["Biển số","Số tiền","Ngày"]], body:expTable, startY:y+5 });
+
+    // Biểu đồ
+    const chartCanvas=document.getElementById("expenseChart");
+    if(chartCanvas){
+      const imgData=chartCanvas.toDataURL("image/png");
+      pdf.addPage();
+      pdf.text("Biểu đồ chi phí",14,15);
+      pdf.addImage(imgData,"PNG",14,20,180,90);
+    }
+
+    pdf.save("BaoDuongXe.pdf");
+  };
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 
