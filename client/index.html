@@ -15,6 +15,13 @@ body {
   font-family: "Arial", "DejaVu Sans", sans-serif;
   background-color: #f8f9fa;
 }
+/* Toast container */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2100;
+}
 </style>
 </head>
 <body>
@@ -107,6 +114,25 @@ body {
   </div>
 </div>
 
+<!-- Toast container + Confirm modal (thêm, không xóa code cũ) -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Modal xác nhận xóa (sẽ thông báo "xóa hết 1 bản ghi") -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-warning">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title">Xác nhận xóa</h5>
+      </div>
+      <div class="modal-body" id="confirmDeleteBody">Bạn có chắc là muốn xóa? (Việc xóa sẽ xóa hết 1 bản ghi)</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="confirmDeleteCancel" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteOk">Xóa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { auth, db } from "./src/js/firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
@@ -115,9 +141,62 @@ import { collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } 
 const logoutBtn = document.getElementById("logout-btn");
 const userInfo = document.getElementById("user-info");
 
+// ========== HÀM HỖ TRỢ THÔNG BÁO (TOAST) ==========
+function showToast(message, type = "info") {
+  // type: "success","danger","warning","info"
+  const colorClass = {
+    success: "bg-success text-white",
+    danger: "bg-danger text-white",
+    warning: "bg-warning",
+    info: "bg-primary text-white"
+  }[type] || "bg-primary text-white";
+
+  const container = document.getElementById("toastContainer");
+  const toast = document.createElement("div");
+  toast.className = `toast align-items-center ${colorClass} border-0 d-flex mb-2`;
+  toast.role = "alert";
+  toast.setAttribute("aria-live", "assertive");
+  toast.setAttribute("aria-atomic", "true");
+  toast.style.minWidth = "200px";
+  toast.innerHTML = `
+    <div class="toast-body">${message}</div>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+  `;
+  container.appendChild(toast);
+  const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+  bsToast.show();
+  toast.addEventListener("hidden.bs.toast", () => toast.remove());
+}
+
+// ========== HÀM XÁC NHẬN (Modal) ==========
+function showConfirmDelete(message) {
+  return new Promise((resolve) => {
+    const modalEl = document.getElementById("confirmDeleteModal");
+    const modalBody = document.getElementById("confirmDeleteBody");
+    const okBtn = document.getElementById("confirmDeleteOk");
+    const cancelBtn = document.getElementById("confirmDeleteCancel");
+    modalBody.innerHTML = message;
+    const modal = new bootstrap.Modal(modalEl);
+
+    const cleanup = () => {
+      okBtn.removeEventListener("click", onOk);
+      cancelBtn.removeEventListener("click", onCancel);
+    };
+    const onOk = () => { cleanup(); modal.hide(); resolve(true); };
+    const onCancel = () => { cleanup(); modal.hide(); resolve(false); };
+
+    okBtn.addEventListener("click", onOk);
+    cancelBtn.addEventListener("click", onCancel);
+
+    modal.show();
+  });
+}
+
 logoutBtn.onclick = async () => {
   console.log("Đang đăng xuất...");
   await signOut(auth);
+  // thông báo đăng xuất
+  showToast("Đăng xuất thành công", "info");
   window.location.href = "login.html";
 };
 
@@ -138,10 +217,43 @@ function initApp(uid){
 
   carForm.addEventListener("submit", async e=>{
     e.preventDefault();
-    const data={uid, plate:carForm.plate.value, brand:carForm.brand.value, model:carForm.model.value, year:carForm.year.value};
-    if(editingCarId){ await updateDoc(doc(db,"cars",editingCarId), data); editingCarId=null; carForm.querySelector("button").textContent="Thêm xe"; }
-    else await addDoc(carCollection,data);
-    carForm.reset(); loadCars();
+    // Kiểm tra trùng biển số (so sánh không phân biệt hoa thường, bớt khoảng trắng)
+    const plateRaw = carForm.plate.value || "";
+    const plate = plateRaw.trim().toUpperCase();
+    const brand = carForm.brand.value;
+    const model = carForm.model.value;
+    const year = carForm.year.value;
+
+    if (!plate) { showToast("Vui lòng nhập biển số", "warning"); return; }
+
+    if(editingCarId){
+      // khi cập nhật: nếu đổi biển số, vẫn nên kiểm tra trùng (với các bản ghi khác)
+      const existingSnap = await getDocs(query(carCollection, where("uid","==",uid), where("plate","==",plate)));
+      // nếu tìm thấy bản ghi khác (id khác editingCarId) -> báo trùng
+      let duplicate = false;
+      existingSnap.forEach(d => { if(d.id !== editingCarId) duplicate = true; });
+      if(duplicate){
+        showToast("Xe đã tồn tại với biển số này!", "warning");
+        return;
+      }
+      const data={uid, plate, brand, model, year};
+      await updateDoc(doc(db,"cars",editingCarId), data);
+      editingCarId=null;
+      carForm.querySelector("button").textContent="Thêm xe";
+      showToast("Cập nhật xe thành công!", "success");
+    } else {
+      // thêm mới: kiểm tra trùng hoàn toàn
+      const existing = await getDocs(query(carCollection, where("uid","==",uid), where("plate","==",plate)));
+      if(!existing.empty){
+        showToast("Xe đã tồn tại với biển số này!", "warning");
+        return;
+      }
+      const data={uid, plate, brand, model, year};
+      await addDoc(carCollection,data);
+      showToast("Thêm xe thành công!", "success");
+    }
+    carForm.reset();
+    loadCars();
   });
 
   async function loadCars(){
@@ -149,17 +261,56 @@ function initApp(uid){
     const snap = await getDocs(query(carCollection, where("uid","==",uid)));
     snap.forEach(d=>{
       const c=d.data();
+      // escape single quotes in plate/brand/model to avoid breaking onclick string
+      const escPlate = (c.plate + "").replace(/'/g, "\\'");
+      const escBrand = (c.brand + "").replace(/'/g, "\\'");
+      const escModel = (c.model + "").replace(/'/g, "\\'");
+      const escYear = (c.year + "").replace(/'/g, "\\'");
       carBody.innerHTML += `<tr>
         <td>${c.plate}</td><td>${c.brand}</td><td>${c.model}</td><td>${c.year}</td>
         <td>
-          <button class="btn btn-sm btn-info text-white" onclick="editCar('${d.id}','${c.plate}','${c.brand}','${c.model}','${c.year}')">Sửa</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteCar('${d.id}')">Xóa</button>
+          <button class="btn btn-sm btn-info text-white" onclick="editCar('${d.id}','${escPlate}','${escBrand}','${escModel}','${escYear}')">Sửa</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteCar('${d.id}','${escPlate}')">Xóa</button>
         </td>
       </tr>`;
     });
   }
-  window.editCar=(id,p,b,m,y)=>{ carForm.plate.value=p; carForm.brand.value=b; carForm.model.value=m; carForm.year.value=y; editingCarId=id; carForm.querySelector("button").textContent="Cập nhật xe"; }
-  window.deleteCar=async id=>{ await deleteDoc(doc(db,"cars",id)); loadCars(); }
+
+  // expose editCar and deleteCar to global so the inline onclick works (module scope)
+  window.editCar=(id,p,b,m,y)=>{
+    carForm.plate.value=p;
+    carForm.brand.value=b;
+    carForm.model.value=m;
+    carForm.year.value=y;
+    editingCarId=id;
+    carForm.querySelector("button").textContent="Cập nhật xe";
+  }
+
+  // now deleteCar will show confirm and also delete related maintenance & expenses
+  window.deleteCar=async (id, plate) => {
+    const message = `⚠️ Việc xóa xe ${plate} sẽ xóa toàn bộ bản ghi.\nBạn có chắc chắn muốn xóa?`;
+    const ok = await showConfirmDelete(message);
+    if(!ok) return;
+    try{
+      await deleteDoc(doc(db,"cars",id));
+      // xóa bảo dưỡng liên quan
+      const maintCollection = collection(db,"maintenance");
+      const maintSnap = await getDocs(query(maintCollection, where("plate","==",plate)));
+      maintSnap.forEach(async d => { await deleteDoc(doc(db,"maintenance",d.id)); });
+      // xóa chi phí liên quan
+      const expCollection = collection(db,"expenses");
+      const expSnap = await getDocs(query(expCollection, where("plate","==",plate)));
+      expSnap.forEach(async d => { await deleteDoc(doc(db,"expenses",d.id)); });
+
+      showToast("Đã xóa xe và các bản ghi liên quan!", "danger");
+      loadCars();
+      loadMaint();
+      loadExpense();
+    } catch(err){
+      console.error(err);
+      showToast("Lỗi khi xóa xe!", "danger");
+    }
+  }
   loadCars();
 
   // ================= BẢO DƯỠNG =================
@@ -171,8 +322,16 @@ function initApp(uid){
   maintForm.addEventListener("submit", async e=>{
     e.preventDefault();
     const data={uid, plate:maintForm.plate.value, content:maintForm.content.value, date:maintForm.date.value};
-    if(editingMaintId){ await updateDoc(doc(db,"maintenance",editingMaintId), data); editingMaintId=null; maintForm.querySelector("button").textContent="Lưu lịch sử"; }
-    else await addDoc(maintCollection,data);
+    if(editingMaintId){
+      await updateDoc(doc(db,"maintenance",editingMaintId), data);
+      editingMaintId=null;
+      maintForm.querySelector("button").textContent="Lưu lịch sử";
+      showToast("Cập nhật lịch sử bảo dưỡng thành công!", "success");
+    }
+    else {
+      await addDoc(maintCollection,data);
+      showToast("Thêm lịch sử bảo dưỡng thành công!", "success");
+    }
     maintForm.reset(); loadMaint();
   });
 
@@ -182,10 +341,12 @@ function initApp(uid){
     const dueCars=[];
     snap.forEach(d=>{
       const m=d.data();
+      const escPlate = (m.plate + "").replace(/'/g, "\\'");
+      const escContent = (m.content + "").replace(/'/g, "\\'");
       maintBody.innerHTML += `<tr>
         <td>${m.plate}</td><td>${m.content}</td><td>${m.date}</td>
         <td>
-          <button class="btn btn-sm btn-info text-white" onclick="editMaint('${d.id}','${m.plate}','${m.content}','${m.date}')">Sửa</button>
+          <button class="btn btn-sm btn-info text-white" onclick="editMaint('${d.id}','${escPlate}','${escContent}','${m.date}')">Sửa</button>
           <button class="btn btn-sm btn-danger" onclick="deleteMaint('${d.id}')">Xóa</button>
         </td>
       </tr>`;
@@ -198,7 +359,14 @@ function initApp(uid){
     }
   }
   window.editMaint=(id,p,c,dte)=>{ maintForm.plate.value=p; maintForm.content.value=c; maintForm.date.value=dte; editingMaintId=id; maintForm.querySelector("button").textContent="Cập nhật lịch sử"; }
-  window.deleteMaint=async id=>{ await deleteDoc(doc(db,"maintenance",id)); loadMaint(); }
+  window.deleteMaint=async id=>{
+    // small confirmation for maint delete
+    const ok = await showConfirmDelete("Bạn có chắc muốn xóa lịch sử bảo dưỡng này? (Không thể hoàn tác)");
+    if(!ok) return;
+    await deleteDoc(doc(db,"maintenance",id));
+    showToast("Xóa lịch sử bảo dưỡng thành công!", "danger");
+    loadMaint();
+  }
   loadMaint();
 
   // ================= CHI PHÍ =================
@@ -211,8 +379,16 @@ function initApp(uid){
   expForm.addEventListener("submit", async e=>{
     e.preventDefault();
     const data={uid, plate:expForm.plate.value, amount:+expForm.amount.value, date:expForm.date.value};
-    if(editingExpId){ await updateDoc(doc(db,"expenses",editingExpId), data); editingExpId=null; expForm.querySelector("button").textContent="Lưu chi phí"; }
-    else await addDoc(expCollection,data);
+    if(editingExpId){
+      await updateDoc(doc(db,"expenses",editingExpId), data);
+      editingExpId=null;
+      expForm.querySelector("button").textContent="Lưu chi phí";
+      showToast("Cập nhật chi phí thành công!", "success");
+    }
+    else {
+      await addDoc(expCollection,data);
+      showToast("Thêm chi phí thành công!", "success");
+    }
     expForm.reset(); loadExpense();
   });
 
@@ -222,10 +398,11 @@ function initApp(uid){
     const labels=[], dataSet=[];
     snap.forEach(d=>{
       const e=d.data();
+      const escPlate = (e.plate + "").replace(/'/g, "\\'");
       expBody.innerHTML += `<tr>
         <td>${e.plate}</td><td>${e.amount}</td><td>${e.date}</td>
         <td>
-          <button class="btn btn-sm btn-info text-white" onclick="editExp('${d.id}','${e.plate}','${e.amount}','${e.date}')">Sửa</button>
+          <button class="btn btn-sm btn-info text-white" onclick="editExp('${d.id}','${escPlate}','${e.amount}','${e.date}')">Sửa</button>
           <button class="btn btn-sm btn-danger" onclick="deleteExp('${d.id}')">Xóa</button>
         </td>
       </tr>`;
@@ -233,9 +410,16 @@ function initApp(uid){
     });
     if(chart) chart.destroy();
     chart=new Chart(document.getElementById("expenseChart"), {type:"bar", data:{labels, datasets:[{label:"Chi phí (VNĐ)", data:dataSet, backgroundColor:"#0d6efd"}]}});
+
   }
   window.editExp=(id,p,a,dte)=>{ expForm.plate.value=p; expForm.amount.value=a; expForm.date.value=dte; editingExpId=id; expForm.querySelector("button").textContent="Cập nhật chi phí"; }
-  window.deleteExp=async id=>{ await deleteDoc(doc(db,"expenses",id)); loadExpense(); }
+  window.deleteExp=async id=>{
+    const ok = await showConfirmDelete("Bạn có chắc muốn xóa chi phí này? (Không thể hoàn tác)");
+    if(!ok) return;
+    await deleteDoc(doc(db,"expenses",id));
+    showToast("Xóa chi phí thành công!", "danger");
+    loadExpense();
+  }
   loadExpense();
 
   // ================= XUẤT PDF =================
@@ -273,6 +457,7 @@ function initApp(uid){
     }
 
     pdf.save("BaoDuongXe.pdf");
+    showToast("Xuất PDF thành công!", "success");
   };
 }
 </script>
@@ -280,5 +465,3 @@ function initApp(uid){
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
