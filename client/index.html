@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<link rel="stylesheet" href="src/css/main.css">
 <style>
 body {
   font-family: "Arial", "DejaVu Sans", sans-serif;
@@ -46,55 +47,60 @@ body {
   <div class="tab-content mt-3">
     <!-- Thông tin xe -->
     <div class="tab-pane fade show active" id="car">
-      <h5>Thêm/Sửa thông tin xe</h5>
+      <h5 class="text-center" style="font-size: 40px;">
+         <i class="fa-solid fa-circle-info"></i>Thêm Thông Tin Xe Người dùng
+        </h5>
       <form id="add-car-form" class="row g-3 mb-3">
         <div class="col-md-3"><input name="plate" type="text" class="form-control" placeholder="Biển số" required></div>
         <div class="col-md-3"><input name="brand" type="text" class="form-control" placeholder="Hãng" required></div>
         <div class="col-md-3"><input name="model" type="text" class="form-control" placeholder="Model" required></div>
         <div class="col-md-3"><input name="year" type="number" class="form-control" placeholder="Năm sản xuất" required></div>
-        <div class="col-12"><button class="btn btn-primary">Thêm xe</button></div>
+        <div class="col-12 text-end"><button class="btn btn-primary">Thêm xe</button></div>
       </form>
-      <h5>Danh sách xe</h5>
+      <h5 class="text-center" style="font-size: 40px;"> <i class="fa-solid fa-car"></i> Danh sách xe</h5>
       <table class="table table-striped align-middle" id="car-list">
-        <thead><tr><th>Biển số</th><th>Hãng</th><th>Model</th><th>Năm</th><th>Hành động</th></tr></thead>
+        <thead><tr><th><i class="fa-solid fa-car-side"></i> Biển số</th><th> <i class="fa-solid fa-screwdriver-wrench"></i>  Hãng</th><th><i class="fa-solid fa-gas-pump"></i> Model</th><th><i class="fa-regular fa-calendar-check"></i> Năm</th><th><i class="fa-solid fa-pen-to-square"></i> Hành động</th></tr></thead>
         <tbody id="car-list-body"></tbody>
       </table>
     </div>
 
     <!-- Lịch sử bảo dưỡng -->
     <div class="tab-pane fade" id="maintenance">
-      <h5>Ghi/Sửa lịch sử bảo dưỡng</h5>
+      <h5 class="text-center" style="font-size: 40px;">
+          <i class="fa-solid fa-pen-to-square"></i>Ghi/sửa lịch sử bảo dưỡng
+      </h5>
       <form id="maintenance-form" class="row g-3 mb-3">
         <div class="col-md-3"><input name="plate" type="text" class="form-control" placeholder="Biển số" required></div>
         <div class="col-md-5"><input name="content" type="text" class="form-control" placeholder="Nội dung bảo dưỡng" required></div>
         <div class="col-md-4"><input name="date" type="date" class="form-control" required></div>
-        <div class="col-12"><button class="btn btn-success">Lưu lịch sử</button></div>
+        <div class="col-12 text-end"><button class="btn btn-primary">Lưu lịch sử</button></div>
       </form>
-      <h5>Lịch sử bảo dưỡng</h5>
+      <h5 class="text-center" style="font-size: 40px;">
+        <i class="fa-regular fa-calendar-days"></i></i>Lịch sử bảo dưỡng</h5>
       <table class="table table-bordered align-middle" id="maintenance-list">
-        <thead><tr><th>Biển số</th><th>Nội dung</th><th>Ngày</th><th>Hành động</th></tr></thead>
+        <thead><tr><th><i class="fa-solid fa-car-side"></i>  Biển số</th><th><i class="fa-solid fa-circle-info"></i> Nội dung</th><th><i class="fa-solid fa-calendar-days"></i> Ngày</th><th> <i class="fa-solid fa-pen-to-square"></i> Hành động</th></tr></thead>
         <tbody id="maintenance-list-body"></tbody>
       </table>
     </div>
 
     <!-- Chi phí -->
     <div class="tab-pane fade" id="expense">
-      <h5>Ghi/Sửa chi phí bảo dưỡng</h5>
+      <h5 class="text-center" style="font-size: 40px;"><i class="fa-solid fa-pen-to-square"></i>Ghi/Sửa chi phí bảo dưỡng</h5>
       <form id="expense-form" class="row g-3 mb-3">
         <div class="col-md-4"><input name="plate" type="text" class="form-control" placeholder="Biển số" required></div>
         <div class="col-md-4"><input name="amount" type="number" class="form-control" placeholder="Số tiền (VNĐ)" required></div>
         <div class="col-md-4"><input name="date" type="date" class="form-control" required></div>
-        <div class="col-12"><button class="btn btn-warning">Lưu chi phí</button></div>
+        <div class="col-12 text-end"><button class="btn btn-primary">Lưu chi phí</button></div>
       </form>
-      <h5>Thống kê chi phí</h5>
+      <h5 class="text-center" style="font-size: 40px;"> <i class="fa-solid fa-chart-simple"></i>Thống kê chi phí</h5>
       <canvas id="expenseChart" height="100"></canvas>
       <table class="table mt-3 align-middle" id="expense-list">
-        <thead><tr><th>Biển số</th><th>Số tiền</th><th>Ngày</th><th>Hành động</th></tr></thead>
+        <thead><tr><th> <i class="fa-solid fa-car-side"></i> Biển số</th><th><i class="fa-solid fa-money-bill"></i> Số tiền</th><th><i class="fa-solid fa-calendar-days"></i> Ngày</th><th> <i class="fa-solid fa-pen-to-square"></i> Hành động</th></tr></thead>
         <tbody id="expense-list-body"></tbody>
       </table>
     </div>
 
-    <button class="btn btn-secondary mt-3" id="export-pdf-btn">Xuất PDF toàn bộ</button>
+    <div class="text-end"><button class="btn btn-primary mt-3" id="export-pdf-btn">Xuất PDF toàn bộ</button></div>
   </div>
 </div>
 
@@ -428,7 +434,7 @@ function initApp(uid){
       labels.push(e.date); dataSet.push(e.amount);
     });
     if(chart) chart.destroy();
-    chart=new Chart(document.getElementById("expenseChart"), {type:"bar", data:{labels, datasets:[{label:"Chi phí (VNĐ)", data:dataSet, backgroundColor:"#0d6efd"}]}});
+    chart=new Chart(document.getElementById("expenseChart"), {type:"bar", data:{labels, datasets:[{label:"Chi phí (VNĐ)", data:dataSet, backgroundColor:'#4CAF50'}]}});
 
   }
   window.editExp=(id,p,a,dte)=>{ expForm.plate.value=p; expForm.amount.value=a; expForm.date.value=dte; editingExpId=id; expForm.querySelector("button").textContent="Cập nhật chi phí"; }
